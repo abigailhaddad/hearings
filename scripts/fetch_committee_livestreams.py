@@ -24,7 +24,7 @@ COMMITTEE_CHANNELS = {
     'UCPxvyZJblT2cz8g9SLtyXtA': 'House Veterans Affairs Committee',
     'UCQtsiDrwfsEfX9EztXvA1ww': 'House Natural Resources Committee',
     'UCiQcpX6mJwB6OwBL_jLNjDQ': 'House Administration Committee',
-    'UCT_8iEGgxgGPcKrKn6gR_SA': 'House Energy and Commerce Committee',
+    'UC5s1kIfkfWbap31d5ef-VtQ': 'House Energy and Commerce Committee',
     'UC5Z9wT6onnCFenRzCQ0TiGg': 'Senate Finance Committee',
     'UCCBJESjTTWeGSifHHq_VT6A': 'Senate Armed Services Committee',
     'UCUlGq0zaT3gYiVdBIGXl-EQ': 'Senate Commerce Committee',
@@ -42,38 +42,49 @@ def fetch_channel_livestreams(youtube, channel_id, channel_name, max_results=500
     """Fetch livestreams from a YouTube channel"""
     
     videos = []
+    livestreams = []
     next_page = None
     
-    print(f"\n📺 Fetching livestreams from {channel_name}...")
+    print(f"\n📺 Fetching videos from {channel_name}...")
     
     try:
-        # Search for all videos from this channel with type=video and eventType=completed
-        # This gets completed live broadcasts
+        # First, get the uploads playlist ID
+        channel_resp = youtube.channels().list(
+            part="contentDetails",
+            id=channel_id
+        ).execute()
+        
+        if not channel_resp.get('items'):
+            print(f"   ⚠️  Channel not found: {channel_id}")
+            return []
+            
+        uploads_playlist_id = channel_resp['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+        
+        # Get all videos from uploads playlist
         while len(videos) < max_results:
-            search_resp = youtube.search().list(
-                part="id",
-                channelId=channel_id,
-                type="video",
-                eventType="completed",  # Only completed live events
+            playlist_resp = youtube.playlistItems().list(
+                part="snippet",
+                playlistId=uploads_playlist_id,
                 maxResults=50,
-                pageToken=next_page,
-                order="date"
+                pageToken=next_page
             ).execute()
             
-            items = search_resp.get('items', [])
+            items = playlist_resp.get('items', [])
             if not items:
                 break
-            
+                
             # Get video IDs
-            video_ids = [item['id']['videoId'] for item in items]
+            video_ids = [item['snippet']['resourceId']['videoId'] for item in items]
             
-            # Get full video details
+            # Get full video details including live streaming info
             videos_resp = youtube.videos().list(
                 part="snippet,liveStreamingDetails,contentDetails,statistics",
                 id=','.join(video_ids)
             ).execute()
             
             for video in videos_resp.get('items', []):
+                videos.append(video)
+                
                 # Only include if it has live streaming details
                 if 'liveStreamingDetails' in video:
                     video_data = {
@@ -87,20 +98,20 @@ def fetch_channel_livestreams(youtube, channel_id, channel_name, max_results=500
                         'viewCount': video['statistics'].get('viewCount', '0'),
                         'liveStreamingDetails': video['liveStreamingDetails']
                     }
-                    videos.append(video_data)
+                    livestreams.append(video_data)
             
             # Check for next page
-            next_page = search_resp.get('nextPageToken')
+            next_page = playlist_resp.get('nextPageToken')
             if not next_page:
                 break
                 
-            print(f"   Found {len(videos)} livestreams so far...")
+            print(f"   Checked {len(videos)} videos, found {len(livestreams)} livestreams...")
             time.sleep(0.5)  # Rate limiting
             
     except HttpError as e:
         print(f"   ❌ Error fetching channel: {e}")
     
-    return videos
+    return livestreams
 
 def main():
     if not API_KEY:

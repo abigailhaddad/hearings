@@ -27,35 +27,46 @@ def calculate_match_score(youtube_video: dict, congress_event: dict) -> dict:
     if congress_event.get('date'):
         congress_date = congress_event['date'][:10]
     
-    # Date matching (50% weight)
+    # Date matching (40% weight - reduced to give more weight to title)
     if yt_date and congress_date:
         if yt_date == congress_date:
-            score += 0.5
+            score += 0.4
             reasons.append(f"Exact date match: {yt_date}")
         else:
-            # Check if within 1 day
+            # Check if within days - more forgiving for YouTube being after Congress
             yt_dt = datetime.fromisoformat(yt_date)
             cg_dt = datetime.fromisoformat(congress_date)
-            diff = abs((yt_dt - cg_dt).days)
-            if diff == 1:
-                score += 0.25
-                reasons.append(f"Date within 1 day: {yt_date} vs {congress_date}")
-            elif diff == 2:
-                score += 0.15
-                reasons.append(f"Date within 2 days: {yt_date} vs {congress_date}")
+            diff = (yt_dt - cg_dt).days
+            
+            # YouTube often posts 1-2 days after the event
+            if 0 <= diff <= 2:  # YouTube is 0-2 days after Congress
+                score += 0.3
+                reasons.append(f"YouTube {diff} day(s) after Congress: {yt_date} vs {congress_date}")
+            elif -1 <= diff < 0:  # YouTube is 1 day before Congress
+                score += 0.2
+                reasons.append(f"YouTube 1 day before Congress: {yt_date} vs {congress_date}")
+            elif abs(diff) <= 3:  # Within 3 days either way
+                score += 0.1
+                reasons.append(f"Date within 3 days: {yt_date} vs {congress_date}")
+    elif not yt_date and congress_date:
+        # No YouTube date - don't penalize too much
+        score += 0.05
+        reasons.append("No YouTube date available")
     
-    # Title similarity (35% weight)
+    # Title similarity (45% weight - increased importance)
     yt_title = normalize_title(youtube_video.get('title', ''))
     cg_title = normalize_title(congress_event.get('title', ''))
     
     title_similarity = SequenceMatcher(None, yt_title, cg_title).ratio()
-    title_score = title_similarity * 0.35
+    title_score = title_similarity * 0.45
     score += title_score
     
     if title_similarity > 0.8:
         reasons.append(f"High title similarity: {title_similarity:.2f}")
     elif title_similarity > 0.6:
         reasons.append(f"Moderate title similarity: {title_similarity:.2f}")
+    elif title_similarity > 0.4:
+        reasons.append(f"Low title similarity: {title_similarity:.2f}")
     
     # Committee matching (10% weight)
     yt_lower = youtube_video.get('title', '').lower()
@@ -101,11 +112,11 @@ def match_youtube_to_expanded_congress():
     
     # Load expanded E&C index
     print("📂 Loading expanded E&C index...")
-    ec_events = json.load(open('ec_filtered_index.json'))
+    ec_events = json.load(open('../outputs/ec_filtered_index.json'))
     print(f"   Loaded {len(ec_events)} E&C events")
     
     # Load YouTube data
-    youtube_data = json.load(open('house_energy_commerce_full.json'))
+    youtube_data = json.load(open('../outputs/house_energy_commerce_full.json'))
     live_videos = [v for v in youtube_data['videos'] if v.get('liveStreamingDetails')]
     print(f"📺 Matching {len(live_videos)} YouTube live streams")
     
@@ -140,10 +151,10 @@ def match_youtube_to_expanded_congress():
         if yt_date and yt_date in date_index:
             candidates.extend(date_index[yt_date])
         
-        # Also check +/- 2 days
+        # Check -3 to +1 days (Congress date 3 days before to 1 day after YouTube)
         if yt_date:
             yt_dt = datetime.fromisoformat(yt_date)
-            for offset in [-2, -1, 1, 2]:
+            for offset in [-3, -2, -1, 1]:
                 check_date = (yt_dt + timedelta(days=offset)).strftime('%Y-%m-%d')
                 if check_date in date_index:
                     candidates.extend(date_index[check_date])
@@ -160,16 +171,26 @@ def match_youtube_to_expanded_congress():
                 best_score = match_result['score']
                 best_match = match_result
         
-        if best_match and best_score >= 0.5:  # Lower threshold to 50%
+        # More flexible matching criteria
+        if best_match and (
+            best_score >= 0.4 or  # General threshold
+            (best_match['reasons'] and any('High title similarity' in r for r in best_match['reasons'])) or  # High title match
+            (not yt_date and best_score >= 0.3)  # No date but decent match
+        ):
+            # Get congress number from the matched event
+            congress_num = next((e['congress'] for e in candidates if e['eventId'] == best_match['eventId']), None)
+            
             matches.append({
                 'youtube_id': video['id'],
                 'youtube_title': video['title'],
-                'youtube_date': video['liveStreamingDetails']['actualStartTime'],
+                'youtube_date': video.get('liveStreamingDetails', {}).get('actualStartTime'),
                 'eventId': best_match['eventId'],
                 'congress_title': best_match['congress_title'],
+                'congress_date': best_match['congress_date'],
                 'committee': best_match['committee'],
                 'score': best_score,
-                'reasons': best_match['reasons']
+                'reasons': best_match['reasons'],
+                'congress_url': f"https://www.congress.gov/event/{congress_num}/house-event/{best_match['eventId']}" if congress_num else None
             })
         else:
             unmatched.append({
@@ -190,11 +211,11 @@ def match_youtube_to_expanded_congress():
             'match_rate': f"{len(matches)/len(live_videos)*100:.1f}%",
             'timestamp': datetime.now().isoformat()
         },
-        'matches': sorted(matches, key=lambda x: x['youtube_date'], reverse=True),
-        'unmatched': sorted(unmatched, key=lambda x: x['youtube_date'] or '', reverse=True)
+        'matches': sorted(matches, key=lambda x: x.get('youtube_date') or '', reverse=True),
+        'unmatched': sorted(unmatched, key=lambda x: x.get('youtube_date') or '', reverse=True)
     }
     
-    with open('youtube_congress_expanded_matches.json', 'w') as f:
+    with open('../outputs/youtube_congress_expanded_matches.json', 'w') as f:
         json.dump(results, f, indent=2)
     
     print(f"\n✅ Matching complete!")
