@@ -48,7 +48,15 @@ def build_comprehensive_ec_index():
     print("Fetching ALL committee meetings and filtering by E&C system codes")
     print("=" * 70)
     
-    for congress in [117, 118, 119]:
+    # Going back 11 years from 2025 to ~2014
+    # Congress 113: 2013-2014
+    # Congress 114: 2015-2016
+    # Congress 115: 2017-2018
+    # Congress 116: 2019-2020
+    # Congress 117: 2021-2022
+    # Congress 118: 2023-2024
+    # Congress 119: 2025-2026
+    for congress in [113, 114, 115, 116, 117, 118, 119]:
         # Skip if already done
         if checkpoint.get(f'congress_{congress}_done', False):
             print(f"✅ Congress {congress} already processed")

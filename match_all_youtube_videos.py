@@ -10,12 +10,42 @@ from difflib import SequenceMatcher
 
 
 def normalize_title(title):
-    """Normalize title for comparison"""
-    # Remove common prefixes
-    title = re.sub(r'^(.*?)(Hearing|Markup|Subcommittee|Committee|Full Committee):\s*', '', title, flags=re.IGNORECASE)
-    # Remove extra whitespace
-    title = re.sub(r'\s+', ' ', title)
-    return title.lower().strip()
+    """Normalize title for comparison - smart version"""
+    original = title
+    
+    # First, always remove date patterns at the beginning
+    title = re.sub(r'^(January|February|March|April|May|June|July|August|September|October|November|December|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\.?\s+\d{1,2},?\s+\d{4}\s+', '', title, flags=re.IGNORECASE)
+    
+    # Extract content from parentheses if substantial
+    paren_match = re.search(r'\((.*?)\)', title)
+    if paren_match and len(paren_match.group(1).split()) > 2:
+        paren_content = paren_match.group(1)
+    else:
+        paren_content = ""
+    
+    # Try aggressive normalization first (remove committee words but keep important procedural words)
+    aggressive = title
+    aggressive = re.sub(r'\b(Health |Energy |O&I |C&T |CMT |IDC |Full Committee |Committee |Subcommittee )', '', aggressive, flags=re.IGNORECASE)
+    # Keep Markup but remove less important procedural words
+    aggressive = re.sub(r'\b(Hearing|Meeting|Legislative|Oversight|Business)\b', '', aggressive, flags=re.IGNORECASE)
+    aggressive = re.sub(r'\s+', ' ', aggressive)
+    aggressive = re.sub(r'[:\-–—]\s*$', '', aggressive)
+    aggressive = aggressive.strip()
+    
+    # If we have substantial content after aggressive normalization, use it
+    if len(aggressive) > 5 and aggressive not in ['', ':', '-', '–']:
+        result = aggressive
+    elif paren_content:
+        # If not, but we have parentheses content, use that
+        result = paren_content
+    else:
+        # Otherwise, do minimal normalization (keep committee/type words)
+        result = title
+        result = re.sub(r'\s+', ' ', result)
+        result = re.sub(r'[:\-–—]\s*$', '', result)
+        result = result.strip()
+    
+    return result.lower()
 
 
 def extract_date_from_info(date_info):
@@ -33,7 +63,38 @@ def calculate_match_score(youtube_video, congress_event):
     score = 0.0
     reasons = []
     
-    # Title similarity (60% weight)
+    # DATE MATCHING - This is critical! (50% weight)
+    yt_date = youtube_video.get('exact_date') or youtube_video.get('approximate_date')
+    cg_date = congress_event.get('date', '')[:10] if congress_event.get('date') else None
+    
+    if yt_date and cg_date:
+        from datetime import datetime
+        yt_dt = datetime.strptime(yt_date, '%Y-%m-%d')
+        cg_dt = datetime.strptime(cg_date, '%Y-%m-%d')
+        days_diff = abs((yt_dt - cg_dt).days)
+        
+        if days_diff == 0:
+            # Same day - good but title match is crucial
+            score += 0.3
+            reasons.append(f"Exact date match: {yt_date}")
+        elif days_diff <= 2:
+            # Within 2 days
+            score += 0.2
+            reasons.append(f"Date within 2 days: {yt_date} vs {cg_date}")
+        elif days_diff <= 7:
+            # Within a week
+            score += 0.1
+            reasons.append(f"Date within a week: {days_diff} days apart")
+        else:
+            # More than a week - strong penalty
+            score -= 0.5
+            reasons.append(f"Date mismatch: {days_diff} days apart")
+    else:
+        # No date info - can't properly match
+        score += 0.0
+        reasons.append("Missing date information")
+    
+    # Title similarity (60% weight - increased for better matching)
     yt_title = normalize_title(youtube_video.get('title', ''))
     cg_title = normalize_title(congress_event.get('title', ''))
     
@@ -48,26 +109,6 @@ def calculate_match_score(youtube_video, congress_event):
     elif title_similarity > 0.4:
         reasons.append(f"Low title similarity: {title_similarity:.2f}")
     
-    # Check for key terms matching (20% weight)
-    key_terms = []
-    
-    # Extract key terms from congress title
-    congress_words = set(cg_title.split())
-    youtube_words = set(yt_title.split())
-    
-    # Find significant overlapping words (>3 chars)
-    overlapping = congress_words & youtube_words
-    significant_overlaps = [w for w in overlapping if len(w) > 3 and w not in ['the', 'and', 'for', 'with']]
-    
-    if significant_overlaps:
-        score += 0.2 * min(len(significant_overlaps) / 5, 1.0)
-        reasons.append(f"Key terms match: {', '.join(significant_overlaps[:5])}")
-    
-    # Committee matching (10% weight)
-    if 'energy' in yt_title and 'commerce' in yt_title:
-        score += 0.1
-        reasons.append("Committee name match")
-    
     # Event type matching (10% weight)
     event_type = congress_event.get('type', '').lower()
     if event_type and event_type in yt_title:
@@ -78,7 +119,7 @@ def calculate_match_score(youtube_video, congress_event):
         'score': score,
         'reasons': reasons,
         'congress_title': congress_event['title'],
-        'committee': congress_event.get('committees', [{}])[0].get('name', 'Unknown') if congress_event.get('committees') else 'Unknown'
+        'committee': congress_event.get('committeeName') or (congress_event.get('committees', [{}])[0].get('name', 'House Energy and Commerce') if congress_event.get('committees') else 'House Energy and Commerce')
     }
 
 
@@ -88,9 +129,13 @@ def main():
     
     # Load YouTube data
     print("\n📺 Loading YouTube data...")
-    with open('ec_youtube_videos_for_matching.json', 'r') as f:
+    # Use the file with exact dates
+    with open('ec_youtube_videos_with_exact_dates.json', 'r') as f:
         youtube_videos = json.load(f)
-    print(f"   Loaded {len(youtube_videos)} YouTube videos")
+    
+    # Filter to only videos with exact dates
+    youtube_videos = [v for v in youtube_videos if v.get('exact_date')]
+    print(f"   Loaded {len(youtube_videos)} YouTube videos with exact dates")
     
     # Load Congress data - check for comprehensive index first
     congress_events = []
@@ -139,28 +184,61 @@ def main():
     
     print("\n🔍 Matching videos...")
     for video in youtube_videos:
-        best_match = None
-        best_score = 0
+        all_matches = []
         
         # Score against all Congress events
         for event in congress_events:
             match_result = calculate_match_score(video, event)
-            
-            if match_result['score'] > best_score:
-                best_score = match_result['score']
-                best_match = {
-                    **match_result,
-                    'event': event
-                }
+            all_matches.append({
+                **match_result,
+                'event': event
+            })
         
-        # Accept matches with reasonable scores
-        if best_match and best_score >= 0.3:
+        # Sort by score
+        all_matches.sort(key=lambda x: x['score'], reverse=True)
+        
+        # Get the best match
+        best_match = all_matches[0] if all_matches else None
+        best_score = best_match['score'] if best_match else 0
+        
+        # For same-day matches, ensure we have good title similarity
+        # If the best match is on the same day but has poor title match, check if there's a better same-day match
+        if best_match and 'Exact date match' in str(best_match.get('reasons', [])):
+            yt_date = video.get('exact_date')
+            # Get all same-day matches
+            same_day_matches = [m for m in all_matches if m['event'].get('date', '')[:10] == yt_date]
+            
+            if same_day_matches:
+                # Find the one with best title similarity
+                best_same_day = max(same_day_matches, key=lambda m: SequenceMatcher(None, 
+                    normalize_title(video.get('title', '')), 
+                    normalize_title(m['event'].get('title', ''))).ratio())
+                
+                # Use this if it has reasonable title similarity (>0.4)
+                title_sim = SequenceMatcher(None, 
+                    normalize_title(video.get('title', '')), 
+                    normalize_title(best_same_day['event'].get('title', ''))).ratio()
+                
+                if title_sim > 0.4:
+                    best_match = best_same_day
+                    best_score = best_match['score']
+        
+        # Accept matches only if they have a positive score and reasonable total score
+        # Lowered threshold to 0.45 to catch same-day events with moderate title similarity
+        if best_match and best_score >= 0.45:
+            congress_num = best_match['event'].get('congress')
+            event_id = best_match['event'].get('eventId')
+            congress_url = f"https://www.congress.gov/event/{congress_num}th-congress/house-event/{event_id}" if congress_num and event_id else None
+            
             matches.append({
                 'youtube_id': video['video_id'],
                 'youtube_title': video['title'],
                 'youtube_url': video['url'],
+                'youtube_date': video.get('exact_date') or video.get('approximate_date'),
                 'congress_title': best_match['congress_title'],
-                'congress_event_id': best_match['event'].get('id'),
+                'eventId': best_match['event'].get('eventId'),
+                'congress_date': best_match['event'].get('date', '')[:10] if best_match['event'].get('date') else None,
+                'congress_url': congress_url,
                 'committee': best_match['committee'],
                 'score': best_score,
                 'reasons': best_match['reasons']
@@ -169,6 +247,7 @@ def main():
             unmatched.append({
                 'youtube_id': video['video_id'],
                 'youtube_title': video['title'],
+                'youtube_date': video.get('exact_date') or video.get('approximate_date'),
                 'best_score': best_score,
                 'best_match': best_match['congress_title'] if best_match else None
             })
