@@ -39,15 +39,24 @@ python match_with_expanded_index.py
 ```
 
 4. View results:
+   - **Online**: Visit https://abigailhaddad.github.io/hearings/ (static viewer)
+   - **Local** (with dynamic features): 
+     ```bash
+     cd ..
+     python3 -m http.server 8000
+     # Open http://localhost:8000/viewer-dynamic.html
+     ```
+
+5. Regenerate static viewer after updates:
 ```bash
-cd ..
-python3 -m http.server 8000
-# Open http://localhost:8000 in your browser
+cd scripts
+python3 generate_static_viewer.py
 ```
 
 ## Project Structure
 
-- `index.html` - Web viewer for matched results
+- `index.html` - Static web viewer with embedded data (works on GitHub Pages)
+- `viewer-dynamic.html` - Dynamic viewer that loads JSON files (requires local server)
 - `scripts/` - Python scripts for data fetching and matching
 - `outputs/` - Generated JSON data files
 - `data/` - Raw Congress API data

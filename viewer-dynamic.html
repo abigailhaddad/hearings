@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy & Commerce YouTube-Congress Matches</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .summary {
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .success { color: #27ae60; font-weight: bold; }
+        .error { color: #e74c3c; font-weight: bold; }
+        
+        .tabs {
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+        
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            color: #7f8c8d;
+        }
+        
+        .tab-button.active {
+            color: #3498db;
+            border-bottom: 3px solid #3498db;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+        
+        th {
+            background: #f8f9fa;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        td {
+            padding: 10px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .date {
+            white-space: nowrap;
+            font-family: monospace;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .youtube-link {
+            color: #c4302b;
+            text-decoration: none;
+        }
+        
+        .youtube-link:hover {
+            text-decoration: underline;
+        }
+        
+        .committee-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+        
+        
+        .search-box {
+            width: 300px;
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        
+        .duplicate-warning {
+            color: #e74c3c;
+            font-size: 11px;
+            font-style: italic;
+        }
+        
+        .no-match-suggestions {
+            background: #fef5e7;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        .suggestion-title {
+            font-weight: bold;
+            color: #d68910;
+            margin-bottom: 5px;
+        }
+        
+        .suggestion-item {
+            margin: 3px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Energy & Commerce YouTube-Congress Matches</h1>
+        
+        <div class="tabs" id="tabs">
+            <!-- Will be populated by JavaScript -->
+        </div>
+        
+        <div class="tab-content active" id="matched">
+            <table id="matched-table">
+                <thead>
+                    <tr>
+                        <th>YouTube Date</th>
+                        <th>Congress Date</th>
+                        <th>YouTube Title</th>
+                        <th>Congress Title</th>
+                        <th>Committee</th>
+                        <th>Event ID</th>
+                        <th>Links</th>
+                    </tr>
+                </thead>
+                <tbody id="matched-tbody">
+                    <!-- Will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="tab-content" id="unmatched" style="display: none;">
+            <p style="color: #666; margin-bottom: 20px;">
+                These YouTube videos couldn't find a good match in the Congress data. 
+                Below are the top 5 potential matches for each.
+            </p>
+            <div id="unmatched-content">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allData = null;
+        let ecIndex = null;
+        
+        // Load both files
+        Promise.all([
+            fetch('./outputs/youtube_congress_expanded_matches.json').then(r => r.json()),
+            fetch('./outputs/ec_filtered_index.json').then(r => r.json())
+        ])
+        .then(([matchData, congressData]) => {
+            allData = matchData;
+            ecIndex = congressData;
+            
+            // Get counts
+            const matched = matchData.metadata.matched;
+            const unmatched = matchData.metadata.unmatched;
+            
+            // Update tabs
+            document.getElementById('tabs').innerHTML = `
+                <button class="tab-button active" onclick="showTab('matched')">Matched Videos (${matched})</button>
+                ${unmatched > 0 ? `<button class="tab-button" onclick="showTab('unmatched')">Unmatched Videos (${unmatched})</button>` : ''}
+            `;
+            
+            displayMatches(matchData.matches);
+            if (unmatched > 0) {
+                displayUnmatched(matchData.unmatched);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading data:', error);
+            document.querySelector('.container').innerHTML += `
+                <div style="background: #fee; padding: 20px; margin: 20px 0; border-radius: 8px;">
+                    <h3 style="color: #c00;">Error Loading Data</h3>
+                    <p>This viewer needs to be run from a local server to load the data files.</p>
+                    <p><strong>To view locally:</strong></p>
+                    <ol>
+                        <li>Clone the repository: <code>git clone https://github.com/abigailhaddad/hearings.git</code></li>
+                        <li>Navigate to the directory: <code>cd hearings</code></li>
+                        <li>Start a local server: <code>python3 -m http.server 8000</code></li>
+                        <li>Open: <a href="http://localhost:8000">http://localhost:8000</a></li>
+                    </ol>
+                    <p style="color: #666; margin-top: 10px;">GitHub Pages cannot serve the JSON data files directly due to CORS restrictions.</p>
+                </div>
+            `;
+        });
+        
+        function displayMatches(matches) {
+            // Sort by date and remove exact duplicates
+            const uniqueMatches = [];
+            const seen = new Set();
+            
+            matches.sort((a, b) => {
+                const dateA = a.youtube_date || '';
+                const dateB = b.youtube_date || '';
+                return dateB.localeCompare(dateA);
+            });
+            
+            matches.forEach(match => {
+                const key = match.youtube_id + '_' + match.eventId;
+                if (!seen.has(key)) {
+                    seen.add(key);
+                    uniqueMatches.push(match);
+                }
+            });
+            
+            const tbody = document.getElementById('matched-tbody');
+            tbody.innerHTML = uniqueMatches.map(match => {
+                const ytDate = match.youtube_date ? match.youtube_date.split('T')[0] : 'N/A';
+                const cgDate = match.congress_date || 'Unknown';
+                
+                const committee = match.committee || 'House Energy and Commerce';
+                
+                return `
+                    <tr>
+                        <td class="date">${ytDate}</td>
+                        <td class="date">${cgDate}</td>
+                        <td>${match.youtube_title}</td>
+                        <td>${match.congress_title}</td>
+                        <td><span class="committee-badge">${committee}</span></td>
+                        <td>${match.eventId}</td>
+                        <td>
+                            <a href="https://youtube.com/watch?v=${match.youtube_id}" target="_blank" class="youtube-link">YouTube</a>
+                            ${match.congress_url ? ` | <a href="${match.congress_url}" target="_blank" style="color: #2c5aa0;">Congress.gov</a>` : ''}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        function displayUnmatched(unmatched) {
+            const container = document.getElementById('unmatched-content');
+            
+            // For each unmatched video, find top 5 potential matches
+            const unmatchedHtml = unmatched.map(video => {
+                const ytDate = video.youtube_date ? video.youtube_date.split('T')[0] : 'N/A';
+                
+                // Find top 5 congress events by calculating simple similarity
+                const potentialMatches = ecIndex
+                    .map(event => {
+                        let score = 0;
+                        
+                        // Date similarity
+                        if (video.youtube_date && event.date) {
+                            const ytD = new Date(video.youtube_date.split('T')[0]);
+                            const cgD = new Date(event.date.split('T')[0]);
+                            const daysDiff = Math.abs((ytD - cgD) / (1000 * 60 * 60 * 24));
+                            if (daysDiff === 0) score += 0.5;
+                            else if (daysDiff <= 1) score += 0.3;
+                            else if (daysDiff <= 2) score += 0.1;
+                        }
+                        
+                        // Title similarity (basic)
+                        const ytWords = video.youtube_title.toLowerCase().split(' ');
+                        const cgWords = event.title.toLowerCase().split(' ');
+                        const commonWords = ytWords.filter(w => cgWords.includes(w) && w.length > 3);
+                        score += (commonWords.length / Math.max(ytWords.length, cgWords.length)) * 0.5;
+                        
+                        return { event, score };
+                    })
+                    .filter(m => m.score > 0)
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 5);
+                
+                return `
+                    <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                        <h3 style="margin-top: 0;">
+                            <a href="https://youtube.com/watch?v=${video.youtube_id}" target="_blank" class="youtube-link">
+                                ${video.youtube_title}
+                            </a>
+                        </h3>
+                        <p style="color: #666; margin: 5px 0;">YouTube Date: <strong>${ytDate}</strong></p>
+                        
+                        <div class="no-match-suggestions">
+                            <div class="suggestion-title">Top 5 Potential Congress Matches:</div>
+                            ${potentialMatches.length > 0 ? 
+                                potentialMatches.map((m, i) => `
+                                    <div class="suggestion-item">
+                                        ${i + 1}. [${m.event.date.split('T')[0]}] ${m.event.title} 
+                                        <span style="color: #999">(${(m.score * 100).toFixed(0)}% similarity)</span>
+                                    </div>
+                                `).join('') :
+                                '<div class="suggestion-item">No potential matches found</div>'
+                            }
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = unmatchedHtml;
+        }
+        
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+        
+        function filterTable(tableId, searchTerm) {
+            const table = document.getElementById(tableId);
+            const rows = table.getElementsByTagName('tr');
+            
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm.toLowerCase()) ? '' : 'none';
+            }
+        }
+    </script>
+</body>
+</html>
