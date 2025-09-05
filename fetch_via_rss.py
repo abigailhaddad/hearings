@@ -320,10 +320,22 @@ def main():
         print("\n🔄 Run without 'discover' argument to fetch videos from these channels")
         return
     
-    # Regular fetch mode
-    print("📋 Using channels from COMMITTEE_CHANNELS constant")
-    print(f"   Total channels: {len(COMMITTEE_CHANNELS)}")
-    print("\n💡 Tip: Run with 'discover' argument to find new channels: python fetch_via_rss.py discover")
+    # Check if we should use only working channels
+    if len(sys.argv) > 1 and sys.argv[1] == 'working':
+        # Use only verified working channels
+        working_channels = {
+            'UC5s1kIfkfWbap31d5ef-VtQ': 'House Energy and Commerce Committee'
+        }
+        print("📋 Using only verified working channels")
+    else:
+        # Use all channels
+        working_channels = COMMITTEE_CHANNELS
+        print("📋 Using channels from COMMITTEE_CHANNELS constant")
+    
+    print(f"   Total channels: {len(working_channels)}")
+    print("\n💡 Tips:")
+    print("   - Run with 'discover' to find new channels: python fetch_via_rss.py discover")
+    print("   - Run with 'working' to use only verified channels: python fetch_via_rss.py working")
     print()
     
     all_videos = []
@@ -331,7 +343,7 @@ def main():
     channel_stats = {}
     
     # Fetch from each known channel
-    for channel_id, channel_name in COMMITTEE_CHANNELS.items():
+    for channel_id, channel_name in working_channels.items():
         videos = fetch_channel_rss(channel_id, channel_name)
         
         if videos:
@@ -346,27 +358,57 @@ def main():
                 'total_videos': len(videos),
                 'potential_livestreams': len(livestreams),
                 'latest_video': videos[0]['publishedAt'] if videos else None,
+                'oldest_video': videos[-1]['publishedAt'] if videos else None,
+                'date_range': f"{videos[-1]['publishedAt'][:10]} to {videos[0]['publishedAt'][:10]}" if videos else None,
                 'rss_url': f"https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
             }
         
         time.sleep(0.5)  # Be polite even though there's no rate limit
     
-    # Save results
+    # Group videos by channel for better organization
+    videos_by_channel = {}
+    for video in all_videos:
+        channel = video['channelName']
+        if channel not in videos_by_channel:
+            videos_by_channel[channel] = []
+        videos_by_channel[channel].append(video)
+    
+    # Save comprehensive results
     output = {
         'metadata': {
             'source': 'rss_feeds',
             'timestamp': datetime.now().isoformat(),
-            'total_channels': len(COMMITTEE_CHANNELS),
+            'total_channels': len(working_channels),
+            'working_channels': len(channel_stats),
             'total_videos': len(all_videos),
             'potential_livestreams': len(all_livestreams),
             'channel_stats': channel_stats
         },
         'videos': sorted(all_videos, key=lambda x: x['publishedAt'], reverse=True),
-        'potential_livestreams': sorted(all_livestreams, key=lambda x: x['publishedAt'], reverse=True)
+        'potential_livestreams': sorted(all_livestreams, key=lambda x: x['publishedAt'], reverse=True),
+        'videos_by_channel': videos_by_channel
     }
     
+    # Save main output
     with open('rss_committee_videos.json', 'w') as f:
         json.dump(output, f, indent=2)
+    
+    # Save just the E&C data if that's all we have
+    if len(channel_stats) == 1 and 'House Energy and Commerce Committee' in channel_stats:
+        ec_output = {
+            'metadata': {
+                'source': 'rss_feed',
+                'timestamp': datetime.now().isoformat(),
+                'channel_name': 'House Energy and Commerce Committee',
+                'channel_id': 'UC5s1kIfkfWbap31d5ef-VtQ',
+                'total_videos': len(videos_by_channel.get('House Energy and Commerce Committee', [])),
+                'stats': channel_stats['House Energy and Commerce Committee']
+            },
+            'videos': videos_by_channel.get('House Energy and Commerce Committee', [])
+        }
+        with open('ec_committee_all_videos.json', 'w') as f:
+            json.dump(ec_output, f, indent=2)
+        print(f"\n💾 E&C specific data saved to: ec_committee_all_videos.json")
     
     print(f"\n✅ Complete!")
     print(f"   Total videos collected: {len(all_videos)}")
@@ -377,9 +419,11 @@ def main():
     print("\n📊 Channel Summary:")
     for name, stats in sorted(channel_stats.items(), key=lambda x: x[1]['potential_livestreams'], reverse=True):
         if stats['total_videos'] > 0:
-            print(f"   {name}:")
+            print(f"\n   {name}:")
+            print(f"      Channel ID: {stats['channel_id']}")
             print(f"      Videos: {stats['total_videos']}")
             print(f"      Potential livestreams: {stats['potential_livestreams']}")
+            print(f"      Date range: {stats['date_range']}")
             print(f"      RSS URL: {stats['rss_url']}")
     
     # Save RSS URLs for easy access
