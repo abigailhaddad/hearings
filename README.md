@@ -54,8 +54,9 @@ python3 -m http.server 8000
 
 ## Current Results
 
-- Successfully matching ~100% of Energy & Commerce YouTube livestreams
+- Successfully matching ~100% of fetched Energy & Commerce YouTube livestreams (92 videos)
 - Provides direct links to both YouTube videos and Congress.gov event pages
+- **Note:** Currently fetching only recent videos (~220 total), not the full channel history. Working on expanding coverage.
 
 ## Next Steps
 
