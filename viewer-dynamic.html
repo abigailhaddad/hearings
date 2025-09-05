@@ -193,12 +193,12 @@
         
         // Load both files
         Promise.all([
-            fetch('./outputs/youtube_congress_expanded_matches.json').then(r => r.json()),
-            fetch('./outputs/ec_filtered_index.json').then(r => r.json())
+            fetch('./youtube_congress_matches.json').then(r => r.json()),
+            fetch('./outputs/ec_filtered_index.json').then(r => r.json()).catch(() => [])
         ])
         .then(([matchData, congressData]) => {
             allData = matchData;
-            ecIndex = congressData;
+            ecIndex = congressData || [];
             
             // Get counts
             const matched = matchData.metadata.matched;
@@ -284,7 +284,7 @@
                 const ytDate = video.youtube_date ? video.youtube_date.split('T')[0] : 'N/A';
                 
                 // Find top 5 congress events by calculating simple similarity
-                const potentialMatches = ecIndex
+                const potentialMatches = ecIndex.length > 0 ? ecIndex
                     .map(event => {
                         let score = 0;
                         
@@ -308,7 +308,7 @@
                     })
                     .filter(m => m.score > 0)
                     .sort((a, b) => b.score - a.score)
-                    .slice(0, 5);
+                    .slice(0, 5) : [];
                 
                 return `
                     <div style="margin-bottom: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
