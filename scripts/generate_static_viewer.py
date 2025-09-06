@@ -218,6 +218,10 @@ def generate_static_html():
 <body>
     <div class="container">
         <h1>🎯 ''' + page_title + '''</h1>
+        <p style="margin-top: 5px; margin-bottom: 20px; color: #666;">
+            <a href="https://github.com/abigailhaddad/hearings" target="_blank" style="color: #3498db; text-decoration: none; margin-right: 15px;">📂 GitHub Repo</a>
+            <a href="https://abigailhaddad.netlify.app/" target="_blank" style="color: #3498db; text-decoration: none;">🌐 Abigail Haddad</a>
+        </p>
         
         <div class="tabs">
             <button class="tab-button active" onclick="showTab('matched', this)">Matched Videos (''' + str(len(match_data['matches'])) + ''')</button>
