@@ -1,0 +1,289 @@
+# Congressional Committee Configuration
+# To add a committee, just add its identifier to the active_committees list
+
+active_committees:
+  - energy_commerce
+  # Just uncomment or add committee identifiers below:
+  # - ways_means
+  # - judiciary
+  # - foreign_affairs
+  # - appropriations
+  # - armed_services
+  # - financial_services
+  # - transportation
+  # - agriculture
+  # - education
+  # - natural_resources
+  # - oversight
+  # - homeland_security
+  # - small_business
+  # - veterans_affairs
+  # - science
+  # - budget
+  # - rules
+  # - intelligence
+  # - ethics
+  # - house_admin
+
+# Committee definitions (DO NOT EDIT - just add committee names to active_committees above)
+committees:
+  agriculture:
+    full_name: "House Committee on Agriculture"
+    short_name: "Agriculture"
+    youtube_html_filename: "House Committee on Agriculture - YouTube.html"
+    codes:
+      hsag00: "Agriculture Committee (Main)"
+      hsag14: "Conservation, Research, and Biotechnology Subcommittee"
+      hsag15: "General Farm Commodities, Risk Management, and Credit Subcommittee"
+      hsag22: "Commodity Markets, Digital Assets, and Rural Development Subcommittee"
+      hsag29: "Nutrition, Foreign Agriculture, and Horticulture Subcommittee"
+      hsag30: "Livestock, Dairy, and Poultry Subcommittee"
+
+  appropriations:
+    full_name: "House Committee on Appropriations"
+    short_name: "Appropriations"
+    youtube_html_filename: "House Committee on Appropriations - YouTube.html"
+    codes:
+      hsap00: "Appropriations Committee (Main)"
+      hsap01: "Agriculture, Rural Development, FDA Subcommittee"
+      hsap02: "Defense Subcommittee"
+      hsap04: "Energy and Water Development Subcommittee"
+      hsap06: "Financial Services and General Government Subcommittee"
+      hsap07: "Labor, HHS, Education Subcommittee"
+      hsap10: "Interior, Environment Subcommittee"
+      hsap15: "Homeland Security Subcommittee"
+      hsap18: "Military Construction, Veterans Affairs Subcommittee"
+      hsap19: "Commerce, Justice, Science Subcommittee"
+      hsap20: "Transportation, HUD Subcommittee"
+
+  armed_services:
+    full_name: "House Committee on Armed Services"
+    short_name: "Armed Services"
+    youtube_html_filename: "House Committee on Armed Services - YouTube.html"
+    codes:
+      hsas00: "Armed Services Committee (Main)"
+      hsas26: "Tactical Air and Land Forces Subcommittee"
+      hsas28: "Seapower and Projection Forces Subcommittee"
+      hsas29: "Strategic Forces Subcommittee"
+      hsas34: "Readiness Subcommittee"
+      hsas35: "Cyber, Innovative Technologies, and Information Systems Subcommittee"
+      hsas36: "Military Personnel Subcommittee"
+
+  budget:
+    full_name: "House Committee on the Budget"
+    short_name: "Budget"
+    youtube_html_filename: "House Committee on the Budget - YouTube.html"
+    codes:
+      hsbu00: "Budget Committee (Main)"
+
+  education:
+    full_name: "House Committee on Education and the Workforce"
+    short_name: "Education & Workforce"
+    youtube_html_filename: "House Committee on Education and the Workforce - YouTube.html"
+    codes:
+      hsed00: "Education and the Workforce Committee (Main)"
+      hsed02: "Early Childhood, Elementary, and Secondary Education Subcommittee"
+      hsed04: "Health, Employment, Labor, and Pensions Subcommittee"
+      hsed13: "Higher Education and Workforce Development Subcommittee"
+
+  energy_commerce:
+    full_name: "House Committee on Energy and Commerce"
+    short_name: "Energy & Commerce"
+    youtube_html_filename: "House Committee on Energy and Commerce - YouTube.html"
+    codes:
+      hsif00: "Energy and Commerce Committee (Main)"
+      hsif02: "Oversight and Investigations Subcommittee"
+      hsif03: "Energy Subcommittee"
+      hsif14: "Health Subcommittee"
+      hsif16: "Communications and Technology Subcommittee"
+      hsif17: "Commerce, Manufacturing, and Trade Subcommittee"
+      hsif18: "Environment Subcommittee"
+
+  ethics:
+    full_name: "House Committee on Ethics"
+    short_name: "Ethics"
+    youtube_html_filename: "House Committee on Ethics - YouTube.html"
+    codes:
+      hsso00: "Ethics Committee (Main)"
+
+  financial_services:
+    full_name: "House Committee on Financial Services"
+    short_name: "Financial Services"
+    youtube_html_filename: "House Committee on Financial Services - YouTube.html"
+    codes:
+      hsba00: "Financial Services Committee (Main)"
+      hsba09: "Housing and Insurance Subcommittee"
+      hsba13: "Oversight and Investigations Subcommittee"
+      hsba15: "Consumer Protection and Financial Institutions Subcommittee"
+      hsba16: "Capital Markets Subcommittee"
+      hsba19: "National Security, Illicit Finance, and International Financial Institutions Subcommittee"
+      hsba20: "Financial Institutions and Monetary Policy Subcommittee"
+
+  foreign_affairs:
+    full_name: "House Committee on Foreign Affairs"
+    short_name: "Foreign Affairs"
+    youtube_html_filename: "House Committee on Foreign Affairs - YouTube.html"
+    codes:
+      hsfa00: "Foreign Affairs Committee (Main)"
+      hsfa05: "Asia and the Pacific Subcommittee"
+      hsfa07: "Europe, Energy, the Environment and Cyber Subcommittee"
+      hsfa13: "Middle East and North Africa Subcommittee"
+      hsfa14: "Terrorism, Nonproliferation, and Trade Subcommittee"
+      hsfa16: "Africa Subcommittee"
+      hsfa20: "Western Hemisphere Subcommittee"
+
+  homeland_security:
+    full_name: "House Committee on Homeland Security"
+    short_name: "Homeland Security"
+    youtube_html_filename: "House Committee on Homeland Security - YouTube.html"
+    codes:
+      hshm00: "Homeland Security Committee (Main)"
+      hshm05: "Counterterrorism and Intelligence Subcommittee"
+      hshm08: "Cybersecurity and Infrastructure Protection Subcommittee"
+      hshm11: "Border Security and Enforcement Subcommittee"
+
+  house_admin:
+    full_name: "House Committee on House Administration"
+    short_name: "House Administration"
+    youtube_html_filename: "House Committee on House Administration - YouTube.html"
+    codes:
+      hsha00: "Committee on House Administration (Main)"
+
+  intelligence:
+    full_name: "House Permanent Select Committee on Intelligence"
+    short_name: "Intelligence"
+    youtube_html_filename: "House Permanent Select Committee on Intelligence - YouTube.html"
+    codes:
+      hlig00: "Intelligence (Permanent Select) Committee (Main)"
+      hlig01: "Central Intelligence Agency Subcommittee"
+      hlig03: "Defense Intelligence and Overhead Architecture Subcommittee"
+      hlig04: "National Security Agency and Cybersecurity Subcommittee"
+
+  judiciary:
+    full_name: "House Committee on the Judiciary"
+    short_name: "Judiciary"
+    youtube_html_filename: "House Committee on the Judiciary - YouTube.html"
+    codes:
+      hsju00: "Judiciary Committee (Main)"
+      hsju01: "Immigration Integrity, Security, and Enforcement Subcommittee"
+      hsju03: "Courts, Intellectual Property, and the Internet Subcommittee"
+      hsju05: "Administrative State, Regulatory Reform, and Antitrust Subcommittee"
+      hsju08: "Crime and Federal Government Surveillance Subcommittee"
+      hsju10: "Constitution and Limited Government Subcommittee"
+
+  natural_resources:
+    full_name: "House Committee on Natural Resources"
+    short_name: "Natural Resources"
+    youtube_html_filename: "House Committee on Natural Resources - YouTube.html"
+    codes:
+      hsii00: "Natural Resources Committee (Main)"
+      hsii06: "Energy and Mineral Resources Subcommittee"
+      hsii10: "Federal Lands Subcommittee"
+      hsii13: "Water, Wildlife, and Fisheries Subcommittee"
+      hsii24: "Indian and Insular Affairs Subcommittee"
+      hsii25: "Oversight and Investigations Subcommittee"
+
+  oversight:
+    full_name: "House Committee on Oversight and Government Reform"
+    short_name: "Oversight"
+    youtube_html_filename: "House Committee on Oversight and Government Reform - YouTube.html"
+    codes:
+      hsgo00: "Oversight and Government Reform Committee (Main)"
+      hsgo11: "Health Care and Financial Services Subcommittee"
+      hsgo12: "Cybersecurity, Information Technology, and Government Innovation Subcommittee"
+      hsgo16: "Delivering on Government Efficiency Subcommittee"
+
+  rules:
+    full_name: "House Committee on Rules"
+    short_name: "Rules"
+    youtube_html_filename: "House Committee on Rules - YouTube.html"
+    codes:
+      hsru00: "Rules Committee (Main)"
+      hsru02: "Rules and Organization of the House Subcommittee"
+      hsru05: "Expedited Procedures Subcommittee"
+
+  science:
+    full_name: "House Committee on Science, Space, and Technology"
+    short_name: "Science"
+    youtube_html_filename: "House Committee on Science, Space, and Technology - YouTube.html"
+    codes:
+      hssy00: "Science, Space, and Technology Committee (Main)"
+      hssy15: "Research and Technology Subcommittee"
+      hssy16: "Space and Aeronautics Subcommittee"
+      hssy18: "Energy Subcommittee"
+      hssy20: "Environment Subcommittee"
+
+  small_business:
+    full_name: "House Committee on Small Business"
+    short_name: "Small Business"
+    youtube_html_filename: "House Committee on Small Business - YouTube.html"
+    codes:
+      hssm00: "Small Business Committee (Main)"
+      hssm23: "Contracting and Infrastructure Subcommittee"
+      hssm24: "Oversight, Investigations, and Regulations Subcommittee"
+
+  transportation:
+    full_name: "House Committee on Transportation and Infrastructure"
+    short_name: "Transportation"
+    youtube_html_filename: "House Committee on Transportation and Infrastructure - YouTube.html"
+    codes:
+      hspw00: "Transportation and Infrastructure Committee (Main)"
+      hspw05: "Aviation Subcommittee"
+      hspw07: "Coast Guard and Maritime Transportation Subcommittee"
+      hspw10: "Economic Development, Public Buildings, and Emergency Management Subcommittee"
+      hspw12: "Highways and Transit Subcommittee"
+      hspw13: "Railroads, Pipelines, and Hazardous Materials Subcommittee"
+      hspw14: "Water Resources and Environment Subcommittee"
+
+  veterans_affairs:
+    full_name: "House Committee on Veterans' Affairs"
+    short_name: "Veterans' Affairs"
+    youtube_html_filename: "House Committee on Veterans' Affairs - YouTube.html"
+    codes:
+      hsvr00: "Veterans' Affairs Committee (Main)"
+      hsvr03: "Health Subcommittee"
+      hsvr09: "Disability Assistance and Memorial Affairs Subcommittee"
+      hsvr10: "Economic Opportunity Subcommittee"
+      hsvr11: "Technology Modernization Subcommittee"
+      hsvr12: "Oversight and Investigations Subcommittee"
+
+  ways_means:
+    full_name: "House Committee on Ways and Means"
+    short_name: "Ways & Means"
+    youtube_html_filename: "House Committee on Ways and Means - YouTube.html"
+    codes:
+      hswm00: "Ways and Means Committee (Main)"
+      hswm01: "Health Subcommittee"
+      hswm02: "Oversight Subcommittee"
+      hswm03: "Social Security Subcommittee"
+      hswm04: "Tax Subcommittee"
+      hswm05: "Trade Subcommittee"
+      hswm06: "Work and Welfare Subcommittee"
+
+# Special/Select Committees (add to active_committees if needed)
+  china_competition:
+    full_name: "Select Committee on Strategic Competition with China"
+    short_name: "China Competition"
+    youtube_html_filename: "Select Committee on Strategic Competition with China - YouTube.html"
+    codes:
+      hlzs00: "Select Committee on the Strategic Competition Between the United States and the Chinese Communist Party"
+
+  climate_crisis:
+    full_name: "Select Committee on the Climate Crisis"
+    short_name: "Climate Crisis"
+    youtube_html_filename: "Select Committee on the Climate Crisis - YouTube.html"
+    codes:
+      hlcn00: "Select Committee on the Climate Crisis"
+
+  modernization:
+    full_name: "Select Committee on the Modernization of Congress"
+    short_name: "Modernization"
+    youtube_html_filename: "Select Committee on the Modernization of Congress - YouTube.html"
+    codes:
+      hlmh00: "Select Committee on the Modernization of Congress"
+
+# Instructions for adding a new committee:
+# 1. Download YouTube HTML: Go to committee channel, scroll to load videos, save page as HTML
+# 2. Name it exactly as specified in youtube_html_filename above
+# 3. Add the committee identifier to active_committees list at the top
+# 4. Run: ./rebuild_all.sh

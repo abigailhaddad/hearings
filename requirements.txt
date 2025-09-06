@@ -3,3 +3,4 @@ python-dotenv
 tqdm
 beautifulsoup4
 google-api-python-client
+pyyaml
