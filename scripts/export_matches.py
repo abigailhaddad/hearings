@@ -6,11 +6,11 @@ def export_to_csv():
     """Export matches to CSV format"""
     
     # Load matches
-    with open('youtube_congress_matches.json', 'r') as f:
+    with open('../data/youtube_congress_matches.json', 'r') as f:
         data = json.load(f)
     
     # Create CSV for matches
-    with open('youtube_congress_matches.csv', 'w', newline='', encoding='utf-8') as f:
+    with open('../data/youtube_congress_matches.csv', 'w', newline='', encoding='utf-8') as f:
         writer = csv.writer(f)
         
         # Header

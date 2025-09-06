@@ -4,3 +4,5 @@ tqdm
 beautifulsoup4
 google-api-python-client
 pyyaml
+litellm
+pydantic

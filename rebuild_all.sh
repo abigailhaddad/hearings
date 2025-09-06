@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Script to rebuild all committee data based on committees_config.yaml
-# Usage: ./rebuild_all.sh
+# Script to rebuild committee data based on committees_config.yaml
+# Now with INCREMENTAL processing - only fetches/processes what's needed
 
 echo "🔄 Rebuilding YouTube-Congress data based on committees_config.yaml"
 echo "================================================================="
@@ -28,39 +28,44 @@ with open('committees_config.yaml', 'r') as f:
 # Move to scripts directory
 cd scripts
 
-# Step 1: Parse YouTube HTML for all active committees
-echo -e "\n📺 Step 1: Parsing YouTube HTML for active committees..."
-python parse_youtube_html_multi.py
-
-# Step 2: Build Congress.gov index for active committees
-echo -e "\n🏛️ Step 2: Fetching congressional data from Congress.gov API..."
-
-# Get the output filename based on active committees
-OUTPUT_FILE=$(python -c "
-import yaml
-with open('../committees_config.yaml', 'r') as f:
-    config = yaml.safe_load(f)
-    suffix = '_'.join(config['active_committees'])
-    print(f'../outputs/{suffix}_filtered_index.json')
+# Step 0: Fetch master Congress data (if needed)
+echo -e "\n🏛️ Step 0: Checking master Congress.gov data..."
+if [ -f "../outputs/all_house_meetings_master.json" ]; then
+    # Check age of master file
+    AGE_DAYS=$(python -c "
+import os
+from datetime import datetime
+age = (datetime.now().timestamp() - os.path.getmtime('../outputs/all_house_meetings_master.json')) / 86400
+print(int(age))
 ")
-
-if [ -f "$OUTPUT_FILE" ]; then
-    echo "   Found existing congressional data file with $(grep -c '"eventId"' "$OUTPUT_FILE" || echo 0) events"
-    echo "   Skipping download (delete $OUTPUT_FILE to re-fetch)"
+    echo "   Master dataset exists (${AGE_DAYS} days old)"
+    if [ $AGE_DAYS -gt 7 ]; then
+        echo "   Dataset is older than 7 days, consider refreshing with:"
+        echo "   python fetch_all_congress_meetings.py"
+    fi
 else
-    echo "This will take several minutes as it fetches data from multiple congresses..."
-    python build_committee_index.py
+    echo "   No master dataset found. Fetching ALL House meetings..."
+    echo "   This is a one-time operation that takes several minutes..."
+    python fetch_all_congress_meetings.py
 fi
+
+# Step 1: Filter committees from master data
+echo -e "\n🔍 Step 1: Filtering committee data from master dataset..."
+python filter_committee_from_master.py
+
+# Step 2: Parse YouTube HTML for all active committees
+echo -e "\n📺 Step 2: Parsing YouTube HTML for active committees..."
+python parse_youtube_html_multi.py
 
 # Step 3: Run LLM matching
 echo -e "\n🤖 Step 3: Running LLM-assisted matching..."
 echo "Note: Requires litellm to be installed (pip install litellm)"
-if python match_with_llm_multi.py; then
+if python match_with_llm.py; then
     echo "✅ Matching completed successfully"
     
     # Step 4: Generate static viewer
     echo -e "\n🌐 Step 4: Generating static HTML viewer..."
-    if python generate_static_viewer_multi.py; then
+    if python generate_static_viewer.py; then
         echo "✅ Static viewer generated successfully"
     else
         echo "❌ Failed to generate static viewer"
@@ -69,6 +74,8 @@ if python match_with_llm_multi.py; then
 else
     echo "❌ Matching failed - skipping HTML generation"
     echo "   Check that litellm is installed and configured"
+    echo "   Make sure you have an API key in your .env file:"
+    echo "   OPENAI_API_KEY=your-key-here"
     exit 1
 fi
 
@@ -94,7 +101,10 @@ with open('committees_config.yaml', 'r') as f:
         print('   - data/all_committees_youtube_videos.json')
     
     print(f'\\n   Congressional data:')
-    print(f'   - outputs/{suffix}_filtered_index.json')
+    print(f'   - outputs/all_house_meetings_master.json (master dataset)')
+    for comm_id in active:
+        print(f'   - outputs/{comm_id}_filtered_index.json')
+    print(f'   - outputs/{suffix}_filtered_index.json (combined)')
     
     print(f'\\n   Matches:')
     print(f'   - data/youtube_congress_matches.json')
@@ -102,5 +112,10 @@ with open('committees_config.yaml', 'r') as f:
     print(f'\\n   HTML viewer:')
     print(f'   - index.html')
 "
+echo ""
+echo "💡 To add more committees:"
+echo "   1. Edit committees_config.yaml and add to active_committees"
+echo "   2. Download their YouTube HTML"
+echo "   3. Run ./rebuild_all.sh again (it will only process new data)"
 echo ""
 echo "You can now serve index.html to view the results!"

@@ -31,8 +31,15 @@ def is_ec_committee(committees_list):
 def build_comprehensive_ec_index():
     """Build comprehensive E&C index by filtering all committee meetings"""
     
-    index_file = "ec_filtered_index.json"
-    checkpoint_file = ".checkpoint_ec_filtered.json"
+    # Get the root directory (parent of scripts)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = os.path.dirname(script_dir)
+    
+    index_file = os.path.join(root_dir, "outputs", "ec_filtered_index.json")
+    checkpoint_file = os.path.join(root_dir, "outputs", ".checkpoint_ec_filtered.json")
+    
+    # Create outputs directory if it doesn't exist
+    os.makedirs(os.path.join(root_dir, "outputs"), exist_ok=True)
     
     # Check for existing index file first
     if os.path.exists(index_file) and not os.path.exists(checkpoint_file):
