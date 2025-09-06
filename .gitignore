@@ -33,3 +33,7 @@ env/
 
 # Checkpoint files
 .checkpoint_*
+
+# YouTube HTML files (may contain API keys)
+*YouTube.html
+*YouTube_files/
