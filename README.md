@@ -137,8 +137,7 @@ Creates an interactive HTML viewer to browse results.
 Add your API key to `.env`:
 ```bash
 OPENAI_API_KEY=your_key_here
-# or for other providers:
-ANTHROPIC_API_KEY=your_key_here
+
 ```
 
 ## Troubleshooting
@@ -159,6 +158,12 @@ ANTHROPIC_API_KEY=your_key_here
 - **Energy & Commerce**: 900+ videos matched
 - **Data range**: Congress 113-119 (2013-2026)
 - **Known limitations**: Some live streams may have incorrect dates
+
+## Future Improvements
+
+- **Add more committees**: Expand beyond Energy & Commerce to other major House committees
+- **Improve LLM matching**: Create test cases and evaluation harness for matching
+- **Integrate with system**: Determine how this could be useful to Congress - for instance, do they need a user interface to make corrections?
 
 ## License
 

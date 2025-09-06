@@ -104,13 +104,24 @@ def update_committee_videos(committee_id, root_dir, yt_dlp_path, force=False):
         print(f"  ✓ All {len(videos)} videos already have dates")
         return True
     
+    # Also skip if we already have dates but show a message
+    if len(videos_needing_dates) == 0:
+        print(f"  ✓ All {len(videos)} videos already have exact dates, skipping...")
+        return True
+    
     print(f"  📹 Found {len(videos)} videos, {len(videos_needing_dates)} need dates")
     
     # Process videos
     updated_count = 0
     failed_count = 0
     
-    for video in tqdm(videos, desc=f"  Getting dates for {committee_id}", disable=len(videos_needing_dates) == 0):
+    # Only process videos that need dates
+    videos_to_process = videos_needing_dates if not force else videos
+    
+    if not videos_to_process:
+        return True
+        
+    for video in tqdm(videos_to_process, desc=f"  Getting dates for {committee_id}"):
         # Skip if we already have exact date (unless forced)
         if (video.get('exact_date') or video.get('actual_date')) and not force:
             continue

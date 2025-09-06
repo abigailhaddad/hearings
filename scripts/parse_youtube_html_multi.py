@@ -203,6 +203,26 @@ def categorize_videos(videos):
 def process_committee(committee_id, committee_info, root_dir):
     """Process YouTube HTML for a single committee"""
     
+    # Check if we already have the output files
+    complete_filename = os.path.join(root_dir, "data", f'{committee_id}_youtube_complete_dataset.json')
+    simplified_filename = os.path.join(root_dir, "data", f'{committee_id}_youtube_videos_for_matching.json')
+    
+    if os.path.exists(complete_filename) and os.path.exists(simplified_filename):
+        print(f"  ✅ YouTube data already exists for {committee_info['short_name']} - skipping HTML parsing")
+        print(f"     To force re-parsing, delete: {complete_filename}")
+        
+        # Load the complete dataset to get proper counts and categories
+        with open(complete_filename, 'r') as f:
+            complete_data = json.load(f)
+        
+        # Return the same structure as if we had processed it
+        return {
+            'committee_id': committee_id,
+            'committee_name': committee_info['short_name'],
+            'videos_count': complete_data['metadata']['videos_with_titles'],
+            'categories': complete_data.get('categories', {})
+        }
+    
     html_file = os.path.join(root_dir, committee_info['youtube_html_filename'])
     
     # Check if HTML file exists
@@ -337,9 +357,11 @@ def main():
         total_videos += result['videos_count']
         
         # Show categories
-        for cat_name, videos in result['categories'].items():
-            if videos:
-                print(f"    {cat_name.replace('_', ' ').title()}: {len(videos)}")
+        for cat_name, value in result['categories'].items():
+            if value:
+                # Handle both list (from fresh parsing) and int (from loaded data)
+                count = len(value) if isinstance(value, list) else value
+                print(f"    {cat_name.replace('_', ' ').title()}: {count}")
     
     if len(all_results) > 1:
         print(f"\n  Total videos across all committees: {total_videos}")

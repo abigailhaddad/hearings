@@ -54,7 +54,8 @@ echo -e "\n🔍 Step 1: Filtering committee data from master dataset..."
 python filter_committee_from_master.py
 
 # Step 2: Parse YouTube HTML for all active committees
-echo -e "\n📺 Step 2: Parsing YouTube HTML for active committees..."
+echo -e "\n📺 Step 2: Parsing YouTube HTML for active committees (if needed)..."
+echo "   Note: This step will be skipped if data files already exist"
 python parse_youtube_html_multi.py
 
 # Step 2.5: Update videos with exact dates using yt-dlp

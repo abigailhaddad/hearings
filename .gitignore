@@ -10,7 +10,11 @@ venv/
 env/
 
 # Data files
-*.json
+# Track important JSON files but ignore others
+!data/*_youtube_complete_dataset.json
+!data/*_youtube_videos_for_matching.json
+!data/youtube_congress_matches.json
+!outputs/*.json
 *.pkl
 *.csv
 

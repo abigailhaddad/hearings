@@ -88,13 +88,29 @@ YouTube Video:
 Potential Congress Matches:
 {''.join(candidates_text)}
 
-Which Congress event (if any) matches this YouTube video? Consider:
-1. Dates should be the same or very close (within a few days)
-2. Titles should refer to the same event (even if worded differently)
-3. "Full Committee Markup" on YouTube likely matches any "Markup" event on the same day
-4. Sometimes YouTube titles are more descriptive than Congress titles
+Which Congress event (if any) matches this YouTube video? 
 
-Return the eventId of the best match, or null if none are good matches."""
+IMPORTANT MATCHING GUIDELINES:
+1. These ARE likely the same event when:
+   - Dates match exactly or are 1-2 days apart (markup Day 2 often follows Day 1)
+   - "Full Committee Markup" matches any "Markup" listing specific bills
+   - "Full Cmte" = "Full Committee" (common abbreviations)
+   - YouTube says "Markup of 7 Bills" and Congress lists those 7 specific bill numbers
+   - One title is generic ("Full Committee Markup") and the other lists specifics
+   - YouTube says "Vote on H.R. 2666" and Congress lists the same bills
+   - "(Cont'd)" or "Day 2" indicates continuation of previous day's event
+
+2. Common patterns that indicate a MATCH:
+   - "Full Committee Markup" = listing of specific H.R. numbers
+   - "SubHealth Markup" = "Health Subcommittee" markup
+   - "Opening Statements" often precedes the main markup event
+   - Bill numbers match even if titles are completely different
+   
+3. Only return null if BOTH:
+   - No events are within 3 days of the YouTube date, OR
+   - Events within 3 days have completely unrelated titles/topics
+
+Return the eventId of the best match."""
 
     try:
         # Check if we have any API keys configured
@@ -115,7 +131,7 @@ Return the eventId of the best match, or null if none are good matches."""
         response = completion(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You match YouTube videos with Congress events. Be precise and only match if you're confident they refer to the same event."},
+                {"role": "system", "content": "You match YouTube videos with Congress events. Congressional data often uses different title formats than YouTube - look for events on the same/adjacent dates that cover the same bills or topics."},
                 {"role": "user", "content": prompt}
             ],
             response_format=MatchDecision,
