@@ -34,6 +34,36 @@ def build_comprehensive_ec_index():
     index_file = "ec_filtered_index.json"
     checkpoint_file = ".checkpoint_ec_filtered.json"
     
+    # Check for existing index file first
+    if os.path.exists(index_file) and not os.path.exists(checkpoint_file):
+        print("📂 Found existing index file, creating checkpoint from it...")
+        with open(index_file, 'r') as f:
+            existing_events = json.load(f)
+        
+        # Create checkpoint from existing data
+        checkpoint = {
+            'events': existing_events,
+            'processed_ids': [e.get('eventId') for e in existing_events if e.get('eventId')]
+        }
+        
+        # Mark completed congresses based on existing data
+        congress_counts = {}
+        for event in existing_events:
+            congress = event.get('congress')
+            if congress:
+                congress_counts[congress] = congress_counts.get(congress, 0) + 1
+        
+        for congress in [113, 114, 115, 116, 117, 118, 119]:
+            count = congress_counts.get(congress, 0)
+            if count > 50:  # If we have substantial data, mark as done
+                checkpoint[f'congress_{congress}_done'] = True
+                print(f"   Congress {congress}: ✅ Marked as done ({count} events)")
+        
+        # Save checkpoint
+        with open(checkpoint_file, 'w') as f:
+            json.dump(checkpoint, f)
+        print("   Checkpoint created from existing data!")
+    
     # Load checkpoint if exists
     checkpoint = {}
     if os.path.exists(checkpoint_file):
