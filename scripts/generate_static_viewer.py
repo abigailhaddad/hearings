@@ -12,13 +12,26 @@ def generate_static_html():
     script_dir = os.path.dirname(os.path.abspath(__file__))
     root_dir = os.path.dirname(script_dir)
     
+    # Load committee configuration
+    import yaml
+    with open(os.path.join(root_dir, 'committees_config.yaml'), 'r') as f:
+        config = yaml.safe_load(f)
+    
+    active_committees = config['active_committees']
+    committee_suffix = '_'.join(active_committees)
+    
     # Load data files
     print("Loading data files...")
     matches_file = os.path.join(root_dir, 'data', 'youtube_congress_matches.json')
     with open(matches_file, 'r') as f:
         match_data = json.load(f)
     
-    congress_file = os.path.join(root_dir, 'outputs', 'ec_filtered_index.json')
+    # Try to find congress file with current committee suffix
+    congress_file = os.path.join(root_dir, 'outputs', f'{committee_suffix}_filtered_index.json')
+    if not os.path.exists(congress_file):
+        # Fall back to old name
+        congress_file = os.path.join(root_dir, 'outputs', 'ec_filtered_index.json')
+    
     with open(congress_file, 'r') as f:
         ec_index = json.load(f)
     
@@ -52,13 +65,25 @@ def generate_static_html():
                 # If date parsing fails, put in no data category
                 unmatched_no_data.append(video)
     
+    # Determine title based on committees in data
+    committees = list(set(m.get('committee', 'Unknown') for m in match_data['matches']))
+    committees = [c for c in committees if c != 'Unknown']
+    committees.sort()
+    
+    if len(committees) == 1:
+        page_title = f"{committees[0]} YouTube Matches"
+    elif len(committees) > 1:
+        page_title = f"Congressional Committee YouTube Matches"
+    else:
+        page_title = "Congressional Committee YouTube Matches"
+    
     # HTML template
     html_template = '''<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Energy & Commerce YouTube-Congress Matches</title>
+    <title>''' + page_title + '''</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -192,7 +217,7 @@ def generate_static_html():
 </head>
 <body>
     <div class="container">
-        <h1>🎯 Energy & Commerce YouTube-Congress Matches</h1>
+        <h1>🎯 ''' + page_title + '''</h1>
         
         <div class="tabs">
             <button class="tab-button active" onclick="showTab('matched', this)">Matched Videos (''' + str(len(match_data['matches'])) + ''')</button>

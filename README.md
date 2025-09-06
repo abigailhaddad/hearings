@@ -1,90 +1,165 @@
 # YouTube-Congress Matcher
 
-Matches YouTube videos from congressional committee channels with Congress.gov hearing records.
+Automatically matches YouTube videos from congressional committee channels with official Congress.gov hearing records.
+
+## Features
+
+- 🎯 **Multi-committee support** - Process multiple committees in one run
+- 📅 **Accurate date extraction** - Uses yt-dlp to get exact upload dates
+- 🤖 **Smart matching** - Combines algorithmic scoring with LLM assistance
+- 🔄 **Incremental processing** - Only processes new/changed data
+- 📊 **Interactive viewer** - Browse matches and unmatched videos
 
 ## Quick Start
 
 ```bash
-# Clean rebuild of all data (after downloading YouTube HTML)
+# Install dependencies
+pip install -r requirements.txt
+
+# Set up API key for Congress.gov
+echo "CONGRESS_API_KEY=your_key_here" > .env
+
+# Download YouTube HTML (see instructions below)
+
+# Run the complete pipeline
 ./rebuild_all.sh
 ```
 
-## Workflow
+## Configuration
 
-### 1. Data Collection
+### Setting Active Committees
 
-**YouTube Data:**
-1. Go to committee YouTube channel (e.g., https://www.youtube.com/@HouseCommitteeEC/videos)
-2. Save complete webpage: File → Save Page As → "Webpage, Complete"
-3. Run `cd scripts && python parse_youtube_html.py <committee_name> <html_file>`
-   - Example: `python parse_youtube_html.py energy_commerce "../House Committee on Energy and Commerce - YouTube.html"`
+Edit `committees_config.yaml` to choose which committees to process:
 
-**Congressional Data:**
-1. Get Congress.gov API key from https://api.data.gov
-2. Add to `.env` file: `CONGRESS_API_KEY=your_key_here`
-3. Run `cd scripts && python build_ec_index_filtered.py` to fetch hearing data
+```yaml
+active_committees:
+  - energy_commerce
+  # Uncomment to add more:
+  # - judiciary
+  # - ways_means
+  # - foreign_affairs
+```
 
-### 2. Matching Process
+Available committees include all 21 major House committees plus select committees.
 
-Run `cd scripts && python match_with_llm.py` to match videos with hearings using:
-- Date matching (same day gets highest score)
-- Title similarity using fuzzy string matching
+### Downloading YouTube Data
+
+For each active committee:
+
+1. Go to the committee's YouTube channel videos page
+2. Scroll down to load all videos you want to capture
+3. Save the page: **File → Save Page As → "Webpage, Complete"**
+4. Use the exact filename specified in `committees_config.yaml`
+   - Example: `House Committee on Energy and Commerce - YouTube.html`
+
+## Pipeline Steps
+
+The `rebuild_all.sh` script runs these steps automatically:
+
+### 1. Fetch Congressional Data (One-time)
+```bash
+python scripts/fetch_all_congress_meetings.py
+```
+Downloads ALL House committee meetings from Congress.gov (takes ~10-15 minutes first time).
+
+### 2. Filter Committee Data
+```bash
+python scripts/filter_committee_from_master.py
+```
+Quickly extracts data for active committees from the master dataset.
+
+### 3. Parse YouTube HTML
+```bash
+python scripts/parse_youtube_html_multi.py
+```
+Extracts video IDs and titles from saved YouTube HTML files.
+
+### 4. Get Exact Dates
+```bash
+python scripts/update_video_dates_ytdlp.py
+```
+Uses yt-dlp to fetch exact upload dates for each video (replaces approximate "2 months ago" dates).
+
+### 5. Match Videos to Hearings
+```bash
+python scripts/match_with_llm.py
+```
+Matches videos with congressional hearings using:
+- Date similarity (exact matches score highest)
+- Title matching with fuzzy string comparison
 - Event type detection (hearing, markup, etc.)
-- LLM assistance for ambiguous matches
+- LLM assistance for uncertain matches
 
-### 3. View Results
-
-1. Generate static viewer: `cd scripts && python generate_static_viewer.py`
-2. Open `index.html` in a browser to see matched videos with links
+### 6. Generate Viewer
+```bash
+python scripts/generate_static_viewer.py
+```
+Creates an interactive HTML viewer to browse results.
 
 ## File Structure
 
-**Data files (in `data/`):**
-- `<committee>_youtube_complete_dataset.json` - All extracted YouTube videos
-- `<committee>_youtube_videos_for_matching.json` - Simplified dataset for matching
-- `youtube_congress_matches.json` - Final matching results
-
-**Output files (in `outputs/`):**
-- `ec_filtered_index.json` - Congressional hearings from Congress.gov API
-
-**Scripts (in `scripts/`):**
-- `parse_youtube_html.py` - Extract videos from saved YouTube HTML (parameterized)
-- `parse_ec_html_complete.py` - Legacy E&C-specific parser
-- `build_ec_index_filtered.py` - Fetch congressional hearing data
-- `match_with_llm.py` - Match YouTube videos to hearings with LLM assist
-- `generate_static_viewer.py` - Generate static HTML viewer
-- `export_matches.py` - Export results to CSV
-
-## Setup
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# Add Congress.gov API key to .env file:
-echo "CONGRESS_API_KEY=your_key_here" > .env
+```
+├── committees_config.yaml       # Committee configuration
+├── rebuild_all.sh              # Main pipeline script
+├── data/                       # YouTube video data
+│   ├── energy_commerce_youtube_complete_dataset.json
+│   ├── energy_commerce_youtube_videos_for_matching.json
+│   └── youtube_congress_matches.json
+├── outputs/                    # Congressional data
+│   ├── all_house_meetings_master.json  # Master dataset (all committees)
+│   ├── energy_commerce_filtered_index.json
+│   └── .checkpoint_*           # Resume files for interrupted fetches
+├── scripts/                    # Processing scripts
+│   ├── fetch_all_congress_meetings.py
+│   ├── filter_committee_from_master.py
+│   ├── parse_youtube_html_multi.py
+│   ├── update_video_dates_ytdlp.py
+│   ├── match_with_llm.py
+│   └── generate_static_viewer.py
+├── index.html                  # Static viewer (generated)
+└── viewer-simple.html          # Dynamic viewer template
 ```
 
-## Expanding to Other Committees
+## Adding New Committees
 
-To process other committees:
-
-1. Download their YouTube channel HTML
-2. Update the committee name when running scripts:
-   ```bash
-   cd scripts
-   python parse_youtube_html.py judiciary "../House Judiciary Committee - YouTube.html"
-   ```
-3. For congressional data, you'll need to modify `build_ec_index_filtered.py` to use different committee codes
+1. Edit `committees_config.yaml` and add the committee ID to `active_committees`
+2. Download the committee's YouTube HTML with the exact filename from the config
+3. Run `./rebuild_all.sh` - it will only process the new committee's data
 
 ## Requirements
 
 - Python 3.7+
-- Congress.gov API key
-- litellm (for LLM-assisted matching)
+- Congress.gov API key (free from https://api.data.gov)
+- OpenAI API key (or other LLM provider supported by litellm)
 
-## Current Status
+### LLM Configuration
 
-- Energy & Commerce: ~900+ videos, ~700+ hearings indexed
-- Known issue: Congress 117 (2021-2022) data unavailable due to API errors
+Add your API key to `.env`:
+```bash
+OPENAI_API_KEY=your_key_here
+# or for other providers:
+ANTHROPIC_API_KEY=your_key_here
+```
+
+## Troubleshooting
+
+### No matches found
+- Check that yt-dlp is getting dates: `cd scripts && python update_video_dates_ytdlp.py`
+- Verify your LLM API key is set correctly in `.env`
+
+### Master dataset is old
+- Re-fetch congressional data: `cd scripts && python fetch_all_congress_meetings.py --clean`
+
+### Rate limiting
+- The scripts include delays to avoid rate limits
+- If you hit limits, wait a bit and the scripts will resume from checkpoints
+
+## Current Coverage
+
+- **Energy & Commerce**: 900+ videos matched
+- **Data range**: Congress 113-119 (2013-2026)
+- **Known limitations**: Some live streams may have incorrect dates
+
+## License
+
+MIT

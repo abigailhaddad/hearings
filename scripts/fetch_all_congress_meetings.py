@@ -88,9 +88,10 @@ def fetch_all_house_meetings():
                     
                     # Filter for House meetings
                     house_meetings = [m for m in meetings if m.get('chamber') == 'House']
+                    print(f"   Found {len(house_meetings)} House meetings in this batch")
                     
                     # Process each meeting
-                    with tqdm(total=len(house_meetings), desc=f"Batch {offset//limit + 1}") as pbar:
+                    with tqdm(total=len(house_meetings), desc=f"Batch {offset//limit + 1}", disable=False, file=sys.stdout) as pbar:
                         for meeting in house_meetings:
                             event_id = meeting.get('eventId')
                             
@@ -149,6 +150,8 @@ def fetch_all_house_meetings():
                                 checkpoint[f'congress_{congress}_offset'] = offset
                                 with open(checkpoint_file, 'w') as f:
                                     json.dump(checkpoint, f)
+                                print(f"\n   💾 Checkpoint saved: {len(all_meetings)} total House meetings found so far")
+                                print(f"   Currently processing Congress {congress}, batch starting at {offset}\n")
                     
                     offset += limit
                     

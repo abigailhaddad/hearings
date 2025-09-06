@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Energy & Commerce YouTube-Congress Matches</title>
+    <title>Congressional Committee YouTube Matches</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -128,7 +128,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎯 Energy & Commerce YouTube-Congress Matches</h1>
+        <h1 id="page-title">🎯 Congressional Committee YouTube Matches</h1>
         
         <div class="tabs">
             <button class="tab-button active" onclick="showTab('matched', this)">Matched Videos</button>
@@ -181,6 +181,19 @@
         fetch('./youtube_congress_matches.json')
             .then(response => response.json())
             .then(data => {
+                // Update page title based on committees in the data
+                const committees = [...new Set(data.matches.map(m => m.committee || 'Unknown'))];
+                const committeeNames = committees.filter(c => c !== 'Unknown').sort();
+                
+                if (committeeNames.length > 0) {
+                    const titleText = committeeNames.length === 1 
+                        ? `${committeeNames[0]} YouTube Matches`
+                        : `Congressional Committee YouTube Matches (${committeeNames.join(', ')})`;
+                    
+                    document.getElementById('page-title').textContent = `🎯 ${titleText}`;
+                    document.title = titleText;
+                }
+                
                 // Display matched videos
                 const matchedTbody = document.getElementById('matched-tbody');
                 const matchedHtml = data.matches.map(match => `

@@ -57,6 +57,11 @@ python filter_committee_from_master.py
 echo -e "\n📺 Step 2: Parsing YouTube HTML for active committees..."
 python parse_youtube_html_multi.py
 
+# Step 2.5: Update videos with exact dates using yt-dlp
+echo -e "\n📅 Step 2.5: Getting exact dates for YouTube videos..."
+echo "This may take a while on first run (fetches metadata for each video)"
+python update_video_dates_ytdlp.py
+
 # Step 3: Run LLM matching
 echo -e "\n🤖 Step 3: Running LLM-assisted matching..."
 echo "Note: Requires litellm to be installed (pip install litellm)"
