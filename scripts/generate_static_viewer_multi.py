@@ -1,1 +1,0 @@
-generate_static_viewer.py
